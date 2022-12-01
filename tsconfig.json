@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "moduleResolution": "node",
+        "noImplicitAny": true,
+        "removeComments": true
+    },
+    "include": ["day*/**/*.ts"],
+    "exclude": ["node_modules"]
+}
