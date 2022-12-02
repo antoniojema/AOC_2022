@@ -2,8 +2,11 @@
     "compilerOptions": {
         "moduleResolution": "node",
         "noImplicitAny": true,
-        "removeComments": true
+        "removeComments": true,
+        "target": "es5",
+        "sourceMap": true,
+        "outDir": "out",
     },
-    "include": ["day*/**/*.ts"],
+    "include": ["src/**/*.ts", "*.ts"],
     "exclude": ["node_modules"]
 }

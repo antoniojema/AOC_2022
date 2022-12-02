@@ -1,13 +1,16 @@
 import * as events from 'events';
 import * as fs from 'fs';
 import * as readline from 'readline';
+import {resolve} from 'path';
 
-const filename = __dirname + '/data.dat';
+const filename = "data.dat"
+const rootpath = resolve(__dirname + `/../../`);
+const filepath = resolve(rootpath + `/src/day01/${filename}`);
 
 (async function main() {
     try {
         const rl = readline.createInterface({
-            input: fs.createReadStream(filename),
+            input: fs.createReadStream(filepath),
             crlfDelay: Infinity
         });
 

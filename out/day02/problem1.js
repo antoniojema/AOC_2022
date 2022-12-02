@@ -35,54 +35,48 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var events = require("events");
 var fs = require("fs");
 var readline = require("readline");
-var filename = __dirname + '/data.dat';
+var path_1 = require("path");
+var RockPaperScissors_1 = require("./RockPaperScissors");
+var filename = "data.dat";
+var rootpath = (0, path_1.resolve)(__dirname + "/../../");
+var filepath = (0, path_1.resolve)(rootpath + "/src/day02/".concat(filename));
 (function main() {
     return __awaiter(this, void 0, void 0, function () {
-        var rl, top_calories, current_calories, checkCalories_1, sum, err_1;
+        var rl, total_score, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
+                    console.log("Opening file: ".concat(filepath));
                     rl = readline.createInterface({
-                        input: fs.createReadStream(filename),
-                        crlfDelay: Infinity
+                        input: fs.createReadStream(filepath)
                     });
-                    top_calories = [0, 0, 0];
-                    current_calories = 0;
-                    checkCalories_1 = function () {
-                        for (var top_1 = 0; top_1 < top_calories.length; top_1++) {
-                            if (current_calories > top_calories[top_1]) {
-                                for (var n = 2; n > top_1; n--) {
-                                    top_calories[n] = top_calories[n - 1];
-                                }
-                                top_calories[top_1] = current_calories;
-                                break;
-                            }
-                        }
-                    };
+                    total_score = 0;
                     rl.on('line', function (line) {
                         line = line.trim();
-                        if (line === '') {
-                            checkCalories_1();
-                            current_calories = 0;
-                        }
-                        else {
-                            current_calories += Number(line);
-                        }
+                        if (line == "")
+                            return;
+                        var foe_play = new RockPaperScissors_1.Play(line.charAt(0));
+                        line = line.substring(1).trim();
+                        var my_play = new RockPaperScissors_1.Play(line.charAt(0));
+                        var result = my_play.resultAgainst(foe_play);
+                        var score = my_play.scoreAgainst(foe_play);
+                        total_score += score;
+                        console.log("--- PLAY ---");
+                        console.log("Foe play: ".concat(foe_play.toHuman()));
+                        console.log("My play:  ".concat(my_play.toHuman()));
+                        console.log("".concat(result.toHuman()));
+                        console.log("Score: ".concat(score));
+                        console.log("");
                     });
                     return [4, events.once(rl, 'close')];
                 case 1:
                     _a.sent();
-                    if (current_calories > 0) {
-                        checkCalories_1();
-                    }
-                    sum = top_calories.reduce(function (a, b) { return a + b; });
-                    console.log('Top 3 calories: ' + top_calories);
-                    console.log('Top 3 calories sum: ' + sum);
+                    console.log("Total score: ".concat(total_score));
                     return [3, 3];
                 case 2:
                     err_1 = _a.sent();
@@ -93,4 +87,4 @@ var filename = __dirname + '/data.dat';
         });
     });
 })();
-//# sourceMappingURL=main.js.map
+//# sourceMappingURL=problem1.js.map
