@@ -1,6 +1,8 @@
 @echo off
-set day=day02
+set day=day08
 set problem=2
+
+set cmnd=node out\%day%\problem%problem%.js
 
 set /A argC=0
 set only=false
@@ -13,8 +15,9 @@ for %%x in (%*) do (
 
 if "%only%" == "true" (
     echo Only run
+    %cmnd%
 ) else (
     echo Build and run
     tsc
+    %cmnd%
 )
-node out\%day%\%problem%\main.js

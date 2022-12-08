@@ -6,7 +6,8 @@
         "target": "es5",
         "sourceMap": true,
         "outDir": "out",
+        "downlevelIteration": true
     },
-    "include": ["src/**/*.ts", "*.ts"],
+    "include": ["src/**/*.ts"],
     "exclude": ["node_modules"]
 }
