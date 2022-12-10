@@ -3,10 +3,12 @@
         "moduleResolution": "node",
         "noImplicitAny": true,
         "removeComments": true,
-        "target": "es5",
+        "target": "ESNext",
+        "module": "ESNext",
         "sourceMap": true,
         "outDir": "out",
-        "downlevelIteration": true
+        "downlevelIteration": true,
+        "allowSyntheticDefaultImports": true
     },
     "include": ["src/**/*.ts"],
     "exclude": ["node_modules"]

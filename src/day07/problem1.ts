@@ -1,5 +1,5 @@
 import { resolve } from 'path';
-import { getFileSystem } from './filesystem';
+import { getFileSystem } from './filesystem.js';
 
 
 /***************************************/

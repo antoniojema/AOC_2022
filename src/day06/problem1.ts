@@ -1,6 +1,6 @@
 import { resolve } from 'path';
 import { exit } from 'process';
-import { getStream } from './datastream';
+import { getStream } from './datastream.js';
 
 /***************************************/
 /***************************************/

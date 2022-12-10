@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 import {resolve} from 'path';
 
-import {Play, MatchResult, playToGetResult} from './RockPaperScissors';
+import {Play, MatchResult, playToGetResult} from './RockPaperScissors.js';
 
 const filename = "data.dat"
 const rootpath = resolve(__dirname + `/../../`);

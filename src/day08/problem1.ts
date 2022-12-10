@@ -1,5 +1,5 @@
 import { resolve } from 'path';
-import { getForest } from './forest';
+import { getForest } from './forest.js';
 
 /***************************************/
 /***************************************/

@@ -1,5 +1,5 @@
 import { resolve } from 'path';
-import { getMaxStack, getInitialCargo, getMoves } from './cargo';
+import { getMaxStack, getInitialCargo, getMoves } from './cargo.js';
 
 /***************************************/
 /***************************************/

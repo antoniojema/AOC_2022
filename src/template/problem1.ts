@@ -1,10 +1,15 @@
 import * as fs from 'fs';
 import * as readline from 'readline';
-import { resolve } from 'path';
 
 /***************************************/
 /***************************************/
 /***************************************/
+
+import { resolve } from 'path';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const filename = "example.dat"
 const rootpath = resolve(__dirname + `/../../`);

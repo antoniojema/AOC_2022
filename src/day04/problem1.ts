@@ -2,7 +2,7 @@ import * as events from 'events';
 import * as fs from 'fs';
 import * as readline from 'readline';
 import { resolve } from 'path';
-import { SectorRangePair } from './ranges'
+import { SectorRangePair } from './ranges.js'
 
 /***************************************/
 /***************************************/
