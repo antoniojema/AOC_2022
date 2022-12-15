@@ -1,5 +1,5 @@
 @echo off
-set day=day13
+set day=day14
 set problem=2
 
 set cmnd=node out\%day%\problem%problem%.js
