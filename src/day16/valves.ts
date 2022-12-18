@@ -29,6 +29,10 @@ class Network extends Array<Room> {
         super(0);
     }
 
+    sortByRate() {
+        this.sort((a, b) => b.rate - a.rate);
+    }
+
     stringify() : string {
         return this.map((room) => room.stringify()).join("\n");
     }
@@ -41,6 +45,32 @@ class Network extends Array<Room> {
     }
 
     get start() : Room {return this.getRoomOfName("AA");}
+
+    get maxRate() : Room {
+        return this.reduce((prev, curr) => (prev.rate > curr.rate) ? prev : curr);
+    }
+
+    get maxRateSorted() : Room {
+        return this[this.length-1];
+    }
+
+    get closedMaxRate() : Room {
+        let ret_room : Room = undefined;
+        for (const room of this) {
+            if (!room.open) {
+                if (ret_room === undefined || room.rate > ret_room.rate)
+                    ret_room = room;
+            }
+        }
+        return ret_room;
+    }
+
+    get closedMaxRateSorted() : Room {
+        for (let n = this.length-1; n >= 0; n--) {
+            const room = this[n];
+            if (!room.open) return room;
+        }
+    }
 }
 
 

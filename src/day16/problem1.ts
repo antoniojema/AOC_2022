@@ -18,6 +18,11 @@ async function main() {
     const network = await getNetwork(filepath);
 
     console.log(network.stringify());
+    console.log(" ");
+
+    network.sortByRate();
+
+    console.log(network.stringify());
 }
 
 (async function() {

@@ -20,16 +20,16 @@ const max = (filename === "example.dat") ? 20 : 4000000;
 async function main() {
     const sensor_set = await getSensors(filepath);
 
-    // console.log(sensor_set.getMap());
-    // console.log("");
-    // console.log(sensor_set.getMap(new Index(0,0), new Index(max,max)));
-
-    const indices = sensor_set.getUnknownInRange(new Index(0,0), new Index(max, max));
-
-    console.log("Unknown tiles in range:")
-    for (const index of indices) {
-        console.log(`${index.stringify()} - Tuning frequency: ${index.tuningFrequency}`);
+    // @ts-ignore
+    if (filename === "example.dat") {
+        console.log(sensor_set.getMap(new Index(0,0), new Index(max,max)));
     }
+
+    // const indices = sensor_set.getUnknownInRange(new Index(0,0), new Index(max, max));
+    // const index = sensor_set.getUnknownInRange_SparseArray(new Index(0,0), new Index(max, max));
+    const index = sensor_set.getUnknownInRange_SparseMap(new Index(0,0), new Index(max, max));
+
+    console.log(`Unknown tile in range: ${index.stringify()} - Tuning frequency: ${index.tuningFrequency}`);
 
 }
 

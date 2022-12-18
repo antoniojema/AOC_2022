@@ -1,6 +1,6 @@
 import * as fs from 'fs';
-import { stringify } from 'querystring';
 import * as readline from 'readline';
+import { Sparse } from './sparse.js';
 
 export enum Tile {
     empty, beacon, sensor, unknown
@@ -190,24 +190,106 @@ class SensorSet {
         return tile_arr;
     }
 
+    getNonUnknownSparseTilesAtRow(row : number, col_lim : [number, number] = undefined) : Sparse.SliceArray<boolean> {
+        if (col_lim === undefined) {
+            col_lim = [this.minCol, this.maxCol];
+        }
+        else {
+            if (col_lim[0] === undefined)
+                col_lim[0] = this.minCol;
+            if (col_lim[1] === undefined)
+                col_lim[1] = this.maxCol;
+        }
+
+        const tile_arr = new Sparse.SliceArray<boolean>({ini : col_lim[0], fin : col_lim[1]}, false);
+        for (const sensor of this.sensors) {
+            const dist = sensor.manhattanDist();
+
+            const rest = dist - Math.abs(sensor.position.row - row);
+
+            if (rest >= 0) {
+                const ini = Math.max(col_lim[0], sensor.position.col - rest);
+                const fin = Math.min(col_lim[1], sensor.position.col + rest);
+
+                tile_arr.setRange({ini : ini, fin : fin}, true);
+            }
+        }
+
+        return tile_arr;
+    }
+
     getEmptyTilesAtRow(row : number) : number {
         return this.getTilesAtRow(row).allTiles().reduce((acc, curr) => acc + (isEmpty(curr) ? 1 : 0), 0)
     }
 
-    getUnknownInRange(lim_L : Index, lim_U : Index) : Index[] {
+    getUnknownInRange(lim_L : Index, lim_U : Index) : Index {
         [lim_L, lim_U] = this.adjustLims(lim_L, lim_U);
 
-        const indices : Index[] = []
         for (let row = lim_L.row; row <= lim_U.row; row++) {
             const tiles = this.getTilesAtRow(row, [lim_L.col, lim_U.col]);
             
             for (let col = lim_L.col; col <= lim_U.col; col++) {
                 if (tiles.get(col) === Tile.unknown)
-                    // indices.push(new Index(row, col));
-                    return [new Index(row, col)];
+                    return new Index(row, col);
             }
         }
-        return indices;
+        return undefined;
+    }
+
+    getUnknownInRange_SparseArray(lim_L : Index, lim_U : Index) : Index {
+        [lim_L, lim_U] = this.adjustLims(lim_L, lim_U);
+
+        for (let row = lim_L.row; row <= lim_U.row; row++) {
+            const tiles = this.getNonUnknownSparseTilesAtRow(row, [lim_L.col, lim_U.col]);
+
+            const empty_pos = tiles.getEmptyPos();
+            if (empty_pos !== undefined) {
+                return new Index(row, empty_pos);
+            }
+        }
+        return undefined;
+    }
+
+    getUnknownInRange_SparseMap(lim_L : Index, lim_U : Index) : Index {
+        [lim_L, lim_U] = this.adjustLims(lim_L, lim_U);
+
+        const sparse_map = this.getSparseMap(lim_L, lim_U);
+
+        for (let row = lim_L.row; row <= lim_U.row; row++) {
+            const empty_pos = sparse_map[row - lim_L.row].getEmptyPos();
+
+            if (empty_pos !== undefined) {
+                return new Index(row, empty_pos);
+            }
+        }
+        return undefined;
+    }
+
+    getSparseMap(lim_L : Index, lim_U : Index) : Sparse.SliceMatrix<boolean> {
+        [lim_L, lim_U] = this.adjustLims(lim_L, lim_U);
+
+        const sparse_map = new Array<Sparse.SliceArray<boolean>>(lim_U.row - lim_L.row + 1);
+        for (let n = 0; n < lim_U.row - lim_L.row + 1; n++)
+            sparse_map[n] = new Sparse.SliceArray<boolean>({ini : lim_L.col, fin : lim_U.col}, false);
+        
+        for (const sensor of this.sensors) {
+            const dist = sensor.manhattanDist();
+
+            const row_min = Math.max(sensor.position.row - dist, lim_L.row);
+            const row_max = Math.min(sensor.position.row + dist, lim_U.row);
+
+            for (let row = row_min; row <= row_max; row++) {
+                const rest = dist - Math.abs(sensor.position.row - row);
+
+                if (rest >= 0) {
+                    const ini = Math.max(lim_L.col, sensor.position.col - rest);
+                    const fin = Math.min(lim_U.col, sensor.position.col + rest);
+    
+                    sparse_map[row - lim_L.row].setRange({ini : ini, fin : fin}, true);
+                }
+            }
+        }
+        return sparse_map;
     }
 
     getMap(lim_L : Index = new Index(-Infinity,-Infinity), lim_U : Index = new Index(Infinity, Infinity)) : string{
