@@ -357,9 +357,164 @@ function findBestPath(network : SimplifiedNetwork, n_minutes : number = 30, step
     }
 }
 
-export function findBestSimplifiedPath(network : SimplifiedNetwork, n_steps : number = 30) {
-    return new SimplifiedPath(findBestPath(network, n_steps), n_steps, network);
+// function findBestPathWithTwoAgents(
+//     network : SimplifiedNetwork, 
+//     n_minutes : number = 30,
+//     steps_1? : Step[],
+//     steps_2? : Step[],
+//     is_open? : boolean[],
+//     current_1? : Room,
+//     current_2? : Room,
+//     minute? : number
+// ) : [Step[], Step[]] {
+//     if (steps_1 === undefined) {
+//         steps_1 = [];
+//     }
+//     if (steps_2 === undefined) {
+//         steps_2 = [];
+//     }
+
+//     if (is_open === undefined) {
+//         is_open = new Array<boolean>(network.length);
+//         is_open.fill(false);
+//     }
+
+//     if (current_1 === undefined) {
+//         current_1 = network.start;
+//     }
+
+//     if (current_2 === undefined) {
+//         current_2 = network.start;
+//     }
+    
+//     if (minute === undefined) {
+//         minute = 0;
+//     }
+
+//     let connections_1 = (current_1 == network.start)
+//         ? network.startConnections()
+//         : network.connectionsByName(current_1.name);
+
+//     let connections_2 = (current_2 == network.start)
+//         ? network.startConnections()
+//         : network.connectionsByName(current_2.name);
+    
+//     let unused = is_open.reduce((acc, curr, idx) => {
+//         if (!curr) acc.push(idx);
+//         return acc;
+//     }, new Array<number>(0));
+
+//     let unused_pairs : [number, number][] = [];
+//     for (let n1 = 0   ; n1 < unused.length-1; n1++) {
+//     for (let n2 = n1+1; n2 < unused.length  ; n2++) {
+//         unused_pairs.push([unused[n1], unused[n2]]);
+//     }}
+
+//     // vvv TODO vvv
+
+//     if (unused.length === 1) {
+//         let dist_1 = connections_1[unused[0]];
+//         let dist_2 = connections_2[unused[0]];
+
+//         if (dist_1 <= dist_2) {
+//             if (dist_1 >= n_minutes - minute) {
+//                 return [steps_1, steps_2];
+//             }
+//             else {
+//                 steps_1.push({step : "move", to : unused[0]});
+//                 steps_1.push({step : "open"});
+//                 return [steps_1, steps_2];
+//             }
+//         }
+//         else {
+//             if (dist_2 >= n_minutes - minute) {
+//                 return [steps_1, steps_2];
+//             }
+//             else {
+//                 steps_2.push({step : "move", to : unused[0]});
+//                 steps_2.push({step : "open"});
+//                 return [steps_1, steps_2];
+//             }
+//         }
+//     }
+//     else {
+//         let best_steps : [Step[], Step[]] = [steps_1, steps_2];
+//         let best_evaluation : [number, number] = [
+//             new SimplifiedPath(best_steps[0], n_minutes, network).evaluate(),
+//             new SimplifiedPath(best_steps[1], n_minutes, network).evaluate(),
+//         ]
+//         for (let index_pair of unused_pairs) {
+            
+//             let dist_1_1 = connections_1[index_pair[0]];
+//             let dist_1_2 = connections_1[index_pair[1]];
+//             let dist_2_1 = connections_2[index_pair[0]];
+//             let dist_2_2 = connections_2[index_pair[1]];
+
+//             if (dist_1_1)
+            
+//             if (dist_1 <= dist_2) {
+//                 if (dist_1 >= n_minutes - minute) {
+//                     continue;
+//                 }
+//                 else {
+//                     let new_steps_1 = steps_1.slice();
+//                     let new_steps_2 = steps_2.slice();
+                    
+//                     new_steps_1.push({step : "move", to : index});
+//                     new_steps_1.push({step : "open"});
+    
+//                     let new_is_open = is_open.slice();
+//                     new_is_open[index] = true;
+                    
+//                     let candidate_steps = findBestPath(network, n_minutes, new_steps, new_is_open, network.roomByIndex(index), minute + dist + 1);
+    
+//                     let candidate_evaluation = new SimplifiedPath(candidate_steps, n_minutes, network).evaluate();
+                    
+//                     if (candidate_evaluation > best_evaluation) {
+//                         best_steps = candidate_steps;
+//                         best_evaluation = candidate_evaluation;
+//                     }
+//                 }
+//             }
+//             else {
+            
+//                 if (dist >= n_minutes - minute) {
+//                     continue;
+//                 }
+//                 else {
+//                     let new_steps = steps.slice();
+//                     new_steps.push({step : "move", to : index});
+//                     new_steps.push({step : "open"});
+    
+//                     let new_is_open = is_open.slice();
+//                     new_is_open[index] = true;
+                    
+//                     let candidate_steps = findBestPath(network, n_minutes, new_steps, new_is_open, network.roomByIndex(index), minute + dist + 1);
+    
+//                     let candidate_evaluation = new SimplifiedPath(candidate_steps, n_minutes, network).evaluate();
+                    
+//                     if (candidate_evaluation > best_evaluation) {
+//                         best_steps = candidate_steps;
+//                         best_evaluation = candidate_evaluation;
+//                     }
+//                 }
+//             }
+//         }
+//         return best_steps;
+//     }
+// }
+
+export function findBestSimplifiedPath(network : SimplifiedNetwork, n_minutes : number = 30) {
+    return new SimplifiedPath(findBestPath(network, n_minutes), n_minutes, network);
 }
+
+// export function findBestSimplifiedPathWithTwoAgents(network : SimplifiedNetwork, n_minutes : number = 30) {
+//     let [steps_1, steps_2] = findBestPathWithTwoAgents(network, n_minutes);
+//     return [
+//         new SimplifiedPath(steps_1, n_minutes, network),
+//         new SimplifiedPath(steps_2, n_minutes, network)
+//     ]
+// }
 
 export function getExamplePath(network : Network) : Path {
     const steps : Step[] = [];
