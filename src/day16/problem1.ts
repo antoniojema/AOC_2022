@@ -1,4 +1,4 @@
-import {getNetwork} from './valves.js'
+import {getNetwork, getExamplePath, getSimplifiedExamplePath, SimplifiedNetwork, findBestSimplifiedPath} from './valves.js'
 
 /***************************************/
 /***************************************/
@@ -10,19 +10,21 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const filename = "example.dat"
+const filename = "data.dat"
 const rootpath = resolve(__dirname + `/../../`);
 const filepath = resolve(rootpath + `/src/day16/${filename}`);
 
 async function main() {
     const network = await getNetwork(filepath);
+    const simplified_network = new SimplifiedNetwork(network);
 
-    console.log(network.stringify());
-    console.log(" ");
+    console.log(simplified_network.stringify());
 
-    network.sortByRate();
+    // console.log(getSimplifiedExamplePath(simplified_network).evaluate());
 
-    console.log(network.stringify());
+    let path = findBestSimplifiedPath(simplified_network, 30);
+
+    console.log(`Best result: ${path.evaluate()}`);
 }
 
 (async function() {
