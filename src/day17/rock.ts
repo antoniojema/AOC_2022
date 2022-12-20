@@ -1,3 +1,4 @@
+import { equal } from 'assert';
 import { timeStamp } from 'console';
 import * as fs from 'fs';
 import * as readline from 'readline';
@@ -58,6 +59,19 @@ const Emptyness = {
 
 type EmptynessType = typeof Emptyness[keyof typeof Emptyness];
 
+function equal_Emptiness(a : EmptynessType, b : EmptynessType) { return a === b; }
+function equal_EmptinessArray(a : EmptynessType[], b : EmptynessType[]) {
+    if (a === undefined || b === undefined) return false;
+    if (a.length != b.length) return false;
+    
+    for (let n = 0; n < a.length; n++) {
+        if (a[n] !== b[n]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 export class Chamber {
     private chamber : EmptynessType[][];
     private width  : number;
@@ -65,9 +79,8 @@ export class Chamber {
     private current_height : number;
     private current_jet : number;
     private jets : JetType[];
-    private removed_height : number;
-    private n_compressions : number;
-    private empty_row : EmptynessType[];
+
+    private saved_states : {height : number, n_jet : number, n_rocks : number}[];
 
     constructor(jets : JetType[], width : number = 7) {
         this.reset(jets, width);
@@ -82,9 +95,7 @@ export class Chamber {
         this.current_height = 0;
         this.current_jet = 0;
 
-        this.removed_height = 0;
-        this.n_compressions = 0;
-        this.empty_row = new Array<EmptynessType>(this.width).fill(Emptyness.empty);
+        this.saved_states = [];
 
         this.chamber = new Array<EmptynessType[]>(this.height);
         for (let n = 0; n < this.height; n++) {
@@ -93,7 +104,7 @@ export class Chamber {
         }
     }
 
-    get rocksHeight() {return this.current_height + this.removed_height;}
+    get rocksHeight() {return this.current_height;}
 
     stringify() {
         let str = "";
@@ -173,40 +184,76 @@ export class Chamber {
         this.current_height = Math.max(this.current_height, rock_height);
     }
 
-    private remove(n_rows : number) {
-        this.removed_height += n_rows;
-        this.current_height -= n_rows;
-        this.n_compressions++;
-
-        let new_chamber = this.chamber.slice(n_rows);
-        new_chamber = new_chamber.concat(new Array<EmptynessType[]>(n_rows).fill(this.empty_row));
-        this.chamber = new_chamber;
-    }
-
-    private checkHeight() {
-        let remove : number;
-        if (this.current_height >= this.height - 10) {
-            for (let y = this.current_height-1; y >= 0; y--) {
-                let row = this.chamber[y];
-                let full = row.reduce((acc, curr) => {return acc && (curr === Emptyness.full)}, true);
-                if (full) {
-                    remove = y+1;
-                    break;
+    private *iteratePreviousMatchingRows() : Iterable<number> {
+        let current_row = this.chamber[this.current_height-1];
+        for (let n_state = this.saved_states.length-1; n_state >= 0; n_state--) {
+            let state = this.saved_states[n_state];
+            if (state.n_jet === this.current_jet) {
+                let n_prev_row = state.height - 1;
+                let previous_row = this.chamber[n_prev_row];
+                
+                if (equal_EmptinessArray(current_row, previous_row)) {
+                    yield n_state;
                 }
-            }
-            if (remove === undefined) remove = this.height - 1000;
-
-            this.remove(remove);
-
-            if (this.n_compressions % 10 === 0) {
-                console.log(`Chamber compressed ${this.n_compressions} times`);
-                console.log(`Current height: ${this.rocksHeight}.`);
             }
         }
     }
 
-    letRocksFall(n_rocks : number = 2022) {
+    private chunksEqual(n_upper : number, n_lower : number) : boolean {
+        let distance = n_upper - n_lower;
+        if (distance < 0) return false;
+        if (n_lower < distance) return false;
+        
+        for (let n = 1; n <= distance; n++) {
+            let n_u = n_upper - n;
+            let n_l = n_lower - n;
+            let row_upper = this.chamber[n_u];
+            let row_lower = this.chamber[n_l];
+            if (!equal_EmptinessArray(row_upper, row_lower)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private findPeriodicity(current_n_rocks : number, total_n_rocks : number) : {final_height : number, remaining_rocks : number} {
+        if (this.current_height <= 0) return;
+
+        let n_curr_row = this.current_height-1;
+        for (let n_state of this.iteratePreviousMatchingRows()) {
+            let state = this.saved_states[n_state];
+            let n_prev_row = state.height-1;
+            if (this.chunksEqual(n_curr_row, n_prev_row)) {
+                let previous_n_rocks = state.n_rocks;
+
+                let n_rocks_diff = current_n_rocks - previous_n_rocks;
+                let height_diff = n_curr_row - n_prev_row;
+
+                let remaining_rocks = total_n_rocks - current_n_rocks;
+                let remaining_chuncks = Math.floor(remaining_rocks / n_rocks_diff);
+                let remaining_rocks_in_chunk = remaining_rocks % n_rocks_diff;
+
+                let final_height = this.current_height + height_diff * remaining_chuncks;
+                return {
+                    final_height : final_height,
+                    remaining_rocks : remaining_rocks_in_chunk
+                }
+            }
+        }
+        this.saved_states.push({height : this.current_height, n_jet : this.current_jet, n_rocks : current_n_rocks});
+        
+        return undefined;
+    }
+
+    letRocksFall(n_rocks : number = 2022) : number {
+        let sending_remaining_rocks : boolean = false;
+        let final_height : number;
+        let saved_height : number;
+        let remaining_rocks : number;
+        let n_remaining_rock : number;
+
         let rock_index = 0;
+        let rock_check = n_rocks % N_rock_shapes;
         for (let n_rock = 0; n_rock < n_rocks; n_rock++) {
             if (!isRock(rock_index)) {
                 throw `Error: ${rock_index} is not a valid rock index`;
@@ -214,11 +261,32 @@ export class Chamber {
 
             this.letOneRockFall(rocks[rock_index]);
 
-            this.checkHeight();
-
             rock_index++;
             if (rock_index === 5) rock_index = 0;
+
+            if (!sending_remaining_rocks) {
+                if (rock_index === rock_check) {
+                    let result = this.findPeriodicity(n_rock+1, n_rocks)
+                    if (result !== undefined) {
+                        final_height = result.final_height;
+                        saved_height = this.current_height;
+                        remaining_rocks = result.remaining_rocks;
+                        n_remaining_rock = 0;
+                        if (remaining_rocks === 0) return final_height;
+                        else {
+                            sending_remaining_rocks = true
+                        }
+                    }
+                }
+            }
+            else {
+                n_remaining_rock++;
+                if (n_remaining_rock === remaining_rocks) {
+                    return final_height + (this.current_height - saved_height);
+                }
+            }
         }
+        return this.current_height;
     }
 }
 

@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const filename = "example.dat"
+const filename = "data.dat"
 const rootpath = resolve(__dirname + `/../../`);
 const filepath = resolve(rootpath + `/src/day17/${filename}`);
 
@@ -19,10 +19,8 @@ async function main() {
 
     const chamber = new Chamber(jets);
 
-    chamber.letRocksFall(1000000000000);
-
     // console.log(chamber.stringify());
-    console.log(`Height: ${chamber.rocksHeight}`);
+    console.log(`Height: ${chamber.letRocksFall(1000000000000)}`);
 }
 
 (async function() {
