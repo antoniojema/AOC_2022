@@ -1,4 +1,4 @@
-import { getXXX } from './module.js'
+import { getList } from './list.js'
 
 /***************************************/
 /***************************************/
@@ -10,12 +10,16 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const filename = "example.dat"
+const filename = "data.dat"
 const rootpath = resolve(__dirname + `/../../`);
-const filepath = resolve(rootpath + `/src/dayXX/${filename}`);
+const filepath = resolve(rootpath + `/src/day20/${filename}`);
 
 async function main() {
-    await getXXX(filepath);
+    let list = await getList(filepath);
+
+    console.log(`List length: ${list.length}`);
+
+    console.log(`Coordinates sum: ${list.getGroveCoordinatesSum()}`);
 }
 
 (async function() {

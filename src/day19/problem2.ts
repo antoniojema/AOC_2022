@@ -1,4 +1,4 @@
-import { getXXX } from './module.js'
+import { getBlueprints } from './robots.js'
 
 /***************************************/
 /***************************************/
@@ -12,10 +12,12 @@ const __dirname = path.dirname(__filename);
 
 const filename = "example.dat"
 const rootpath = resolve(__dirname + `/../../`);
-const filepath = resolve(rootpath + `/src/dayXX/${filename}`);
+const filepath = resolve(rootpath + `/src/day19/${filename}`);
 
 async function main() {
-    await getXXX(filepath);
+    await getBlueprints(filepath);
+
+    
 }
 
 (async function() {
