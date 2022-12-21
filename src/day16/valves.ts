@@ -98,80 +98,6 @@ class Network extends Array<Room> {
     }
 }
 
-export class SimplifiedNetwork {
-    private rooms : Room[];
-    private connection_table : number[][];
-    private start_room : Room;
-    private start_connections : number[];
-
-    constructor(network : Network) {
-        this.reset(network);
-    }
-
-    reset(network : Network) {
-        this.rooms = network.getNonZeroRooms();
-        this.start_room = network.start;
-        this.setConnections(network);
-    }
-
-    private setConnections(network : Network) {
-        // Start
-        this.start_connections = new Array<number>(this.length);
-        let start_distances = network.getDistances(this.start_room);
-        for (let n = 0; n < this.length; n++) {
-            this.start_connections[n] = start_distances[network.getRoomIndexByName(this.rooms[n].name)];
-        }
-
-        // Rest
-        this.connection_table = new Array<number[]>(this.length);
-        for (let n = 0; n < this.length; n++) {
-            this.connection_table[n] = new Array<number>(this.length);
-        }
-        for (let n1 = 0; n1 < this.length; n1++) {
-            let distances = network.getDistances(this.rooms[n1]);
-            for (let n2 = n1; n2 < this.length; n2++) {
-                let dist = distances[network.getRoomIndexByName(this.rooms[n2].name)]
-                this.connection_table[n1][n2] = dist;
-                this.connection_table[n2][n1] = dist;
-            }
-        }
-    }
-
-    get length() {return this.rooms.length;}
-    get start() {return this.start_room;}
-
-    startConnections() {return this.start_connections;}
-    connectionsByIndex(idx : number) {return this.connection_table[idx];}
-    connectionsByName(name : string) {return this.connection_table[this.getRoomIndexByName(name)];}
-
-    roomByIndex(index : number) : Room {
-        return this.rooms[index];
-    }
-
-    roomByName(name : string) : Room {
-        for (const room of this.rooms) if (room.name === name) return room;
-        return undefined;
-    }
-
-    getRoomIndexByName(name : string) : number {
-        for (let n = 0; n < this.length; n++) if (this.rooms[n].name === name) return n;
-        return undefined;
-    }
-
-    private stringifyConnection(connections: number[]) : string {
-        return connections.map((dist, idx) => {return `${this.rooms[idx].name} (${dist})`}).join(", ");
-    }
-
-    stringify() : string {
-        return (
-            `Starting room: ${this.start_room.name}. Connections: ${this.stringifyConnection(this.start_connections)}\n` +
-            this.rooms.map((room, idx) => 
-                `Room ${room.name}. Connections: ${this.stringifyConnection(this.connection_table[idx])}`
-            ).join("\n")
-        );
-    }
-}
-
 export type Step_Open = {
     step : "open"
 } 
@@ -185,7 +111,14 @@ export type Step_Move = {
     to : number
 }
 
-export type Step = Step_Open | Step_Move | Step_Nothing;
+export type Step = {
+    step : "open"
+} | {
+    step : "nothing"
+} | {
+    step : "move",
+    to : number
+}
 
 export class Path {
     private steps : Step[];
@@ -217,70 +150,6 @@ export class Path {
                 released_pressure += this.network[n_current].rate * (n_steps - n_step - 1);
             }
             else if (step.step === "move") {
-                n_current = step.to;
-            }
-        }
-
-        return released_pressure;
-    }
-}
-
-export class SimplifiedPath {
-    private n_minutes : number;
-    private steps : Step[];
-    private network : SimplifiedNetwork;
-
-    constructor(steps : Step[], n_minutes : number, network : SimplifiedNetwork) {
-        this.reset(steps, n_minutes, network);
-    }
-
-    reset(steps : Step[], n_minutes : number, network : SimplifiedNetwork) {
-        this.n_minutes = n_minutes;
-        this.steps = steps;
-        this.network = network;
-    }
-
-    evaluate() : number {
-        const is_open = new Array<boolean>(this.network.length)
-        is_open.fill(false);
-
-        let released_pressure = 0;
-        
-        let n_current : number;
-        let init_minute : number = 0;
-        let init_step : number = 0;
-
-        let step = this.steps[init_step];
-        if (step !== undefined && step.step === "open") {
-            released_pressure += this.network.start.rate * (this.n_minutes - 1);
-            init_minute++;
-            init_step++;
-        }
-
-        step = this.steps[init_step];
-        if (step !== undefined && step.step === "move") {
-            n_current = step.to;
-            init_minute += this.network.startConnections()[step.to];
-            init_step++;
-        }
-        else {
-            return released_pressure;
-        }
-
-        let minute = init_minute;
-        for (let step of this.steps.slice(init_step)) {
-            if (minute >= this.n_minutes-1) break;
-
-            if (step.step === "open") {
-                minute ++;
-
-                if (is_open[n_current]) throw `Error: Attempted to open valve in room number ${n_current}`;
-                is_open[n_current] = true;
-                released_pressure += this.network.roomByIndex(n_current).rate * (this.n_minutes - minute);
-            }
-            else if (step.step === "move") {
-                minute += this.network.connectionsByIndex(n_current)[step.to];
-
                 n_current = step.to;
             }
         }
@@ -357,164 +226,9 @@ function findBestPath(network : SimplifiedNetwork, n_minutes : number = 30, step
     }
 }
 
-// function findBestPathWithTwoAgents(
-//     network : SimplifiedNetwork, 
-//     n_minutes : number = 30,
-//     steps_1? : Step[],
-//     steps_2? : Step[],
-//     is_open? : boolean[],
-//     current_1? : Room,
-//     current_2? : Room,
-//     minute? : number
-// ) : [Step[], Step[]] {
-//     if (steps_1 === undefined) {
-//         steps_1 = [];
-//     }
-//     if (steps_2 === undefined) {
-//         steps_2 = [];
-//     }
-
-//     if (is_open === undefined) {
-//         is_open = new Array<boolean>(network.length);
-//         is_open.fill(false);
-//     }
-
-//     if (current_1 === undefined) {
-//         current_1 = network.start;
-//     }
-
-//     if (current_2 === undefined) {
-//         current_2 = network.start;
-//     }
-    
-//     if (minute === undefined) {
-//         minute = 0;
-//     }
-
-//     let connections_1 = (current_1 == network.start)
-//         ? network.startConnections()
-//         : network.connectionsByName(current_1.name);
-
-//     let connections_2 = (current_2 == network.start)
-//         ? network.startConnections()
-//         : network.connectionsByName(current_2.name);
-    
-//     let unused = is_open.reduce((acc, curr, idx) => {
-//         if (!curr) acc.push(idx);
-//         return acc;
-//     }, new Array<number>(0));
-
-//     let unused_pairs : [number, number][] = [];
-//     for (let n1 = 0   ; n1 < unused.length-1; n1++) {
-//     for (let n2 = n1+1; n2 < unused.length  ; n2++) {
-//         unused_pairs.push([unused[n1], unused[n2]]);
-//     }}
-
-//     // vvv TODO vvv
-
-//     if (unused.length === 1) {
-//         let dist_1 = connections_1[unused[0]];
-//         let dist_2 = connections_2[unused[0]];
-
-//         if (dist_1 <= dist_2) {
-//             if (dist_1 >= n_minutes - minute) {
-//                 return [steps_1, steps_2];
-//             }
-//             else {
-//                 steps_1.push({step : "move", to : unused[0]});
-//                 steps_1.push({step : "open"});
-//                 return [steps_1, steps_2];
-//             }
-//         }
-//         else {
-//             if (dist_2 >= n_minutes - minute) {
-//                 return [steps_1, steps_2];
-//             }
-//             else {
-//                 steps_2.push({step : "move", to : unused[0]});
-//                 steps_2.push({step : "open"});
-//                 return [steps_1, steps_2];
-//             }
-//         }
-//     }
-//     else {
-//         let best_steps : [Step[], Step[]] = [steps_1, steps_2];
-//         let best_evaluation : [number, number] = [
-//             new SimplifiedPath(best_steps[0], n_minutes, network).evaluate(),
-//             new SimplifiedPath(best_steps[1], n_minutes, network).evaluate(),
-//         ]
-//         for (let index_pair of unused_pairs) {
-            
-//             let dist_1_1 = connections_1[index_pair[0]];
-//             let dist_1_2 = connections_1[index_pair[1]];
-//             let dist_2_1 = connections_2[index_pair[0]];
-//             let dist_2_2 = connections_2[index_pair[1]];
-
-//             if (dist_1_1)
-            
-//             if (dist_1 <= dist_2) {
-//                 if (dist_1 >= n_minutes - minute) {
-//                     continue;
-//                 }
-//                 else {
-//                     let new_steps_1 = steps_1.slice();
-//                     let new_steps_2 = steps_2.slice();
-                    
-//                     new_steps_1.push({step : "move", to : index});
-//                     new_steps_1.push({step : "open"});
-    
-//                     let new_is_open = is_open.slice();
-//                     new_is_open[index] = true;
-                    
-//                     let candidate_steps = findBestPath(network, n_minutes, new_steps, new_is_open, network.roomByIndex(index), minute + dist + 1);
-    
-//                     let candidate_evaluation = new SimplifiedPath(candidate_steps, n_minutes, network).evaluate();
-                    
-//                     if (candidate_evaluation > best_evaluation) {
-//                         best_steps = candidate_steps;
-//                         best_evaluation = candidate_evaluation;
-//                     }
-//                 }
-//             }
-//             else {
-            
-//                 if (dist >= n_minutes - minute) {
-//                     continue;
-//                 }
-//                 else {
-//                     let new_steps = steps.slice();
-//                     new_steps.push({step : "move", to : index});
-//                     new_steps.push({step : "open"});
-    
-//                     let new_is_open = is_open.slice();
-//                     new_is_open[index] = true;
-                    
-//                     let candidate_steps = findBestPath(network, n_minutes, new_steps, new_is_open, network.roomByIndex(index), minute + dist + 1);
-    
-//                     let candidate_evaluation = new SimplifiedPath(candidate_steps, n_minutes, network).evaluate();
-                    
-//                     if (candidate_evaluation > best_evaluation) {
-//                         best_steps = candidate_steps;
-//                         best_evaluation = candidate_evaluation;
-//                     }
-//                 }
-//             }
-//         }
-//         return best_steps;
-//     }
-// }
-
 export function findBestSimplifiedPath(network : SimplifiedNetwork, n_minutes : number = 30) {
     return new SimplifiedPath(findBestPath(network, n_minutes), n_minutes, network);
 }
-
-// export function findBestSimplifiedPathWithTwoAgents(network : SimplifiedNetwork, n_minutes : number = 30) {
-//     let [steps_1, steps_2] = findBestPathWithTwoAgents(network, n_minutes);
-//     return [
-//         new SimplifiedPath(steps_1, n_minutes, network),
-//         new SimplifiedPath(steps_2, n_minutes, network)
-//     ]
-// }
 
 export function getExamplePath(network : Network) : Path {
     const steps : Step[] = [];
@@ -607,4 +321,142 @@ export async function getNetwork(filepath : string) : Promise<Network> {
     }
 
     return network;
+}
+
+export class SimplifiedPath {
+    private n_minutes : number;
+    private steps : Step[];
+    private network : SimplifiedNetwork;
+
+    constructor(steps : Step[], n_minutes : number, network : SimplifiedNetwork) {
+        this.reset(steps, n_minutes, network);
+    }
+
+    reset(steps : Step[], n_minutes : number, network : SimplifiedNetwork) {
+        this.n_minutes = n_minutes;
+        this.steps = steps;
+        this.network = network;
+    }
+
+    evaluate() : number {
+        const is_open = new Array<boolean>(this.network.length)
+        is_open.fill(false);
+
+        let released_pressure = 0;
+        
+        let n_current : number;
+        let init_minute : number = 0;
+        let init_step : number = 0;
+
+        let step = this.steps[init_step];
+        if (step !== undefined && step.step === "open") {
+            released_pressure += this.network.start.rate * (this.n_minutes - 1);
+            init_minute++;
+            init_step++;
+        }
+
+        step = this.steps[init_step];
+        if (step !== undefined && step.step === "move") {
+            n_current = step.to;
+            init_minute += this.network.startConnections()[step.to];
+            init_step++;
+        }
+        else {
+            return released_pressure;
+        }
+
+        let minute = init_minute;
+        for (let step of this.steps.slice(init_step)) {
+            if (minute >= this.n_minutes-1) break;
+
+            if (step.step === "open") {
+                minute ++;
+
+                if (is_open[n_current]) throw `Error: Attempted to open valve in room number ${n_current}`;
+                is_open[n_current] = true;
+                released_pressure += this.network.roomByIndex(n_current).rate * (this.n_minutes - minute);
+            }
+            else if (step.step === "move") {
+                minute += this.network.connectionsByIndex(n_current)[step.to];
+
+                n_current = step.to;
+            }
+        }
+
+        return released_pressure;
+    }
+}
+
+export class SimplifiedNetwork {
+    private rooms : Room[];
+    private connection_table : number[][];
+    private start_room : Room;
+    private start_connections : number[];
+
+    constructor(network : Network) {
+        this.reset(network);
+    }
+
+    reset(network : Network) {
+        this.rooms = network.getNonZeroRooms();
+        this.start_room = network.start;
+        this.setConnections(network);
+    }
+
+    private setConnections(network : Network) {
+        // Start
+        this.start_connections = new Array<number>(this.length);
+        let start_distances = network.getDistances(this.start_room);
+        for (let n = 0; n < this.length; n++) {
+            this.start_connections[n] = start_distances[network.getRoomIndexByName(this.rooms[n].name)];
+        }
+
+        // Rest
+        this.connection_table = new Array<number[]>(this.length);
+        for (let n = 0; n < this.length; n++) {
+            this.connection_table[n] = new Array<number>(this.length);
+        }
+        for (let n1 = 0; n1 < this.length; n1++) {
+            let distances = network.getDistances(this.rooms[n1]);
+            for (let n2 = n1; n2 < this.length; n2++) {
+                let dist = distances[network.getRoomIndexByName(this.rooms[n2].name)]
+                this.connection_table[n1][n2] = dist;
+                this.connection_table[n2][n1] = dist;
+            }
+        }
+    }
+
+    get length() {return this.rooms.length;}
+    get start() {return this.start_room;}
+
+    startConnections() {return this.start_connections;}
+    connectionsByIndex(idx : number) {return this.connection_table[idx];}
+    connectionsByName(name : string) {return this.connection_table[this.getRoomIndexByName(name)];}
+
+    roomByIndex(index : number) : Room {
+        return this.rooms[index];
+    }
+
+    roomByName(name : string) : Room {
+        for (const room of this.rooms) if (room.name === name) return room;
+        return undefined;
+    }
+
+    getRoomIndexByName(name : string) : number {
+        for (let n = 0; n < this.length; n++) if (this.rooms[n].name === name) return n;
+        return undefined;
+    }
+
+    private stringifyConnection(connections: number[]) : string {
+        return connections.map((dist, idx) => {return `${this.rooms[idx].name} (${dist})`}).join(", ");
+    }
+
+    stringify() : string {
+        return (
+            `Starting room: ${this.start_room.name}. Connections: ${this.stringifyConnection(this.start_connections)}\n` +
+            this.rooms.map((room, idx) => 
+                `Room ${room.name}. Connections: ${this.stringifyConnection(this.connection_table[idx])}`
+            ).join("\n")
+        );
+    }
 }
